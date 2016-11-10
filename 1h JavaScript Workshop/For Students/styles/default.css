@@ -1,0 +1,47 @@
+body {
+  background-color: dimgray;
+}
+h1 {
+  color: forestgreen;
+  background-color: lightgray;
+  text-align: center;
+}
+h2 {
+  color: black;
+  background-color: lightgray;
+  text-align: left;
+}
+#DivCenter {
+  text-align: center;
+}
+#GameRegion {
+  background-color: cornflowerblue;
+  padding: 16px;
+  border-color: black;
+  border-width: 2px;
+  border-style: solid;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+#GameRegion > :first-child {
+  margin-top: 0px;
+}
+#GameRegion > :last-child {
+  margin-bottom: 0px;
+}
+#GameRegion > * {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+#GameCanvas {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+  height: 600px;
+  outline-color: darkgreen;
+  outline-width: 2px;
+  outline-style: solid;
+}
