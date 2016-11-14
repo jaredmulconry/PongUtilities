@@ -59,7 +59,7 @@ function updateGame(deltaTime, keyboard, width, height)
   p1y += p1direction * paddleSpeed * deltaTime;
 
   var p1collision = checkScreenBounds(p1x, p1y, paddleWidth, paddleHeight, width, height);
-  fixPlayer1(resolveCollision(p1x, p1y, p1collision));
+  collidePlayer1(resolveCollision(p1x, p1y, p1collision));
   //
 
   //Player 2
@@ -75,14 +75,18 @@ function updateGame(deltaTime, keyboard, width, height)
   p2y += p2direction * paddleSpeed * deltaTime;
 
   var p2collision = checkScreenBounds(p2x, p2y, paddleWidth, paddleHeight, width, height);
-  fixPlayer2(resolveCollision(p2x, p2y, p2collision));
+  collidePlayer2(resolveCollision(p2x, p2y, p2collision));
   //
 
   ballX += ballMoveX * ballSpeed * deltaTime;
   ballY += ballMoveY * ballSpeed * deltaTime;
 
   var ballWallCollision = checkScreenBounds(ballX, ballY, ballRadius*2, ballRadius*2, width, height);
-  
+  collideBall(resolveCollision(ballX, ballY, ballWallCollision));
+
+  var ballP1Collision = checkCollision(ballX, ballY, ballRadius*2, ballRadius*2,
+                                        p1x, p1y, paddleWidth, paddleHeight);
+  collideBall(resolveCollision(ballX, ballY, ballP1Collision));
 }
 
 function drawGame(surface, width, height)
@@ -107,19 +111,29 @@ var HIT_RIGHT = 2;
 var HIT_UP = 3;
 var HIT_DOWN = 4;
 
-function fixPlayer1(resolutionInfo)
+function collidePlayer1(resolutionInfo)
 {
   p1x = resolutionInfo.correctedPos.x;
   p1y = resolutionInfo.correctedPos.y;
 }
-function fixPlayer2(resolutionInfo)
+function collidePlayer2(resolutionInfo)
 {
   p2x = resolutionInfo.correctedPos.x;
   p2y = resolutionInfo.correctedPos.y;
 }
-function fixBall(resolutionInfo)
+function collideBall(resolutionInfo)
 {
+  ballX = resolutionInfo.correctedPos.x;
+  ballY = resolutionInfo.correctedPos.y;
 
+  if(resolutionInfo.correctionDir.x != 0)
+  {
+    ballMoveX *= -1;
+  }
+  else if(resolutionInfo.correctionDir.y != 0)
+  {
+    ballMoveY *= -1;
+  }
 }
 
 function resolveCollision(x, y, collisionInfo)
@@ -184,48 +198,96 @@ function checkScreenBounds(x, y, w, h, sw, sh)
   var up = y - hh;
   var down = y + hh;
 
-  return calculateMinOverlap({l: left, r: right, u: up, d: down},
-                              {l: sw, r: 0, u: sh, d: 0});
+  return calculateInverseMinOverlap({l: left, r: right, u: up, d: down},
+                              {l: 0, r: sw, u: 0, d: sh});
+}
+
+function calculateInverseMinOverlap(box1, bounds)
+{
+  var currentHit = { dir: HIT_NONE, overlap: Number.MAX_VALUE };
+
+  if(box1.l < bounds.l)
+  {
+      var overlap = bounds.l-box1.l;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_LEFT;
+      }
+    }
+    if(box1.r > bounds.r)
+    {
+      var overlap = box1.r - bounds.r;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_RIGHT;
+      }
+    }
+    if(box1.u < bounds.u)
+    {
+      var overlap = bounds.u-box1.u;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_UP;
+      }
+    }
+    if(box1.d > bounds.d)
+    {
+      var overlap = box1.d - bounds.d;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_DOWN;
+      }
+    }
+
+    return currentHit;
 }
 
 function calculateMinOverlap(box1, box2)
 {
   var currentHit = { dir: HIT_NONE, overlap: Number.MAX_VALUE };
 
-  if(box1.l < box2.r)
+  var leftIntersect = (box1.l - box2.r) < 0 && (box1.l - box2.l) > 0;
+  var rightIntersect = (box1.r - box2.l) > 0 && (box1.r - box2.r) < 0;
+  var topIntersect = (box1.u - box2.d) < 0 && (box1.u - box2.u) > 0;
+  var bottomIntersect = (box1.d - box2.u) > 0 && (box1.d - box2.d) < 0;
+
+  if((leftIntersect && (bottomIntersect || topIntersect)) || (rightIntersect && (bottomIntersect || topIntersect)))
   {
-    var overlap = box2.r-box1.l;
-    if(overlap < currentHit.overlap)
     {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_LEFT;
+      var overlap = box2.r-box1.l;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_LEFT;
+      }
     }
-  }
-  if(box1.r > box2.l)
-  {
-    var overlap = box1.r - box2.l;
-    if(overlap < currentHit.overlap)
     {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_RIGHT;
+      var overlap = box1.r - box2.l;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_RIGHT;
+      }
     }
-  }
-  if(box1.u < box2.d)
-  {
-    var overlap = box2.d-box1.u;
-    if(overlap < currentHit.overlap)
     {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_UP;
+      var overlap = box2.d-box1.u;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_UP;
+      }
     }
-  }
-  if(box1.d > box2.u)
-  {
-    var overlap = box1.d - box2.u;
-    if(overlap < currentHit.overlap)
     {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_DOWN;
+      var overlap = box1.d - box2.u;
+      if(overlap < currentHit.overlap)
+      {
+        currentHit.overlap = overlap;
+        currentHit.dir = HIT_DOWN;
+      }
     }
   }
 
