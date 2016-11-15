@@ -69,6 +69,10 @@ var Vector = function()
 			res.normalize();
 			return res;
 	};
+	this.equals = function(other)
+	{
+		return this.x == other.x && this.y == other.y;
+	}
 
 	if(arguments.length == 0) return;
   
@@ -87,9 +91,63 @@ var Vector = function()
   }
 };
 
-var Paddle = function(pos, color)
+Vector.zero = new Vector(0, 0);
+Vector.one = new Vector(1, 1);
+Vector.up = new Vector(0, -1);
+Vector.down = new Vector(0, 1);
+Vector.left = new Vector(-1, 0);
+Vector.right = new Vector(1, 0);
+
+var Paddle = function(pos, color, up, down)
 {
-  
+  this.position = pos;
+	this.color = color;
+	this.direction = 0;
+	this.upControl = up;
+	this.downControl = down;
+	
+	this.update = function(deltaTime, keyboard)
+	{
+		this.direction = 0;
+		if(keyboard.getKey(this.upControl))
+		{
+			this.direction -= 1;
+		}
+		if(keyboard.getKey(this.downControl))
+		{
+			this.direction += 1;
+		}
+
+  	this.position.y += this.direction * Paddle.speed * deltaTime;
+	};
+
+	this.draw = function(surface)
+	{
+		surface.fillStyle = this.color;
+		surface.fillRect(this.position.x - Paddle.halfSize.x, this.position.y - Paddle.halfSize.y, Paddle.size.x, Paddle.size.y);
+	};
 };
 
 Paddle.size = new Vector(16, 64);
+Paddle.halfSize = Paddle.size.scale(0.5);
+Paddle.speed = 128;
+
+var Ball = function(pos, color, startSpeed)
+{
+	this.position = pos;
+	this.color = color;
+	this.startSpeed = startSpeed;
+	this.currentSpeed = this.startSpeed;
+	this.direction = new Vector(Math.random(), Math.random()).subtract(new Vector(0.5, 0.5)).scale(2);
+	while(this.direction.equals(Vector.zero))
+	{
+		this.direction.x = (Math.random() - 0.5) * 2;
+		this.direction.y = (Math.random() - 0.5) * 2;
+	}
+	this.direction.normalize();
+
+	this.update = function(deltaTime)
+	{
+		this.position.addTo(this.direction.scale(this.currentSpeed).scale(deltaTime));
+	};
+};
