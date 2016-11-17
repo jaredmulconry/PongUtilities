@@ -1,6 +1,6 @@
-"use strict;"
+"use strict";
 
-var fpsTarget = 75;
+var gameFpsTarget = 120;
 var backgroundColor = "gray";
 var KEY_W = 87;
 var KEY_S = 83;
@@ -27,6 +27,7 @@ var ballSpeed = 32;
 var ballColor = "black";
 var ballMoveX = 0;
 var ballMoveY = 0;
+var ball;
 
 function setupGame(width, height)
 {
@@ -40,11 +41,15 @@ function setupGame(width, height)
 
   ballMoveX = Math.random() < 0.5 ? -1 : 1;
   ballMoveY = Math.random() < 0.5 ? -1 : 1;
+
+  ball = new Ball(new Vector(width*0.5, height*0.5),
+    "black",
+    8);
 }
 
 function updateGame(deltaTime, keyboard, width, height)
 {
-  //Player 1
+  
   p1direction = 0;
   p2direction = 0;
   if(keyboard.getKey(KEY_W))
@@ -55,14 +60,6 @@ function updateGame(deltaTime, keyboard, width, height)
   {
     p1direction += 1;
   }
-
-  p1y += p1direction * paddleSpeed * deltaTime;
-
-  var p1collision = checkScreenBounds(p1x, p1y, paddleWidth, paddleHeight, width, height);
-  collidePlayer1(resolveCollision(p1x, p1y, p1collision));
-  //
-
-  //Player 2
   if(keyboard.getKey(KEY_I))
   {
     p2direction -= 1;
@@ -72,6 +69,14 @@ function updateGame(deltaTime, keyboard, width, height)
     p2direction += 1;
   }
 
+  //Player 1
+  p1y += p1direction * paddleSpeed * deltaTime;
+
+  var p1collision = checkScreenBounds(p1x, p1y, paddleWidth, paddleHeight, width, height);
+  collidePlayer1(resolveCollision(p1x, p1y, p1collision));
+  //
+
+  //Player 2
   p2y += p2direction * paddleSpeed * deltaTime;
 
   var p2collision = checkScreenBounds(p2x, p2y, paddleWidth, paddleHeight, width, height);
@@ -104,12 +109,6 @@ function drawGame(surface, width, height)
 //All of the stuff down here should already work
 //Do not Touch!
 ////////////////////////////////////////////////////
-
-var HIT_NONE = 0;
-var HIT_LEFT = 1;
-var HIT_RIGHT = 2;
-var HIT_UP = 3;
-var HIT_DOWN = 4;
 
 function collidePlayer1(resolutionInfo)
 {
@@ -170,36 +169,24 @@ function resolveCollision(x, y, collisionInfo)
 function checkCollision(x1, y1, w1, h1,
                         x2, y2, w2, h2)
 {
-  var hw1 = w1 / 2.0;
-  var hw2 = w2 / 2.0;
-  var hh1 = h1 / 2.0;
-  var hh2 = h2 / 2.0;
+  var hw1 = w1 * 0.5;
+  var hw2 = w2 * 0.5;
+  var hh1 = h1 * 0.5;
+  var hh2 = h2 * 0.5;
 
-  var left1 = x1 - hw1;
-  var right1 = x1 + hw1;
-  var up1 = y1 - hh1;
-  var down1 = y1 + hh1;
-  var left2 = x2 - hw2;
-  var right2 = x2 + hw2;
-  var up2 = y2 - hh2;
-  var down2 = y2 + hh2;
-
-  return calculateMinOverlap({l: left1, r: right1, u: up1, d: down1}, 
-                              {l: left2, r: right2, u: up2, d: down2});
+  return calculateMinOverlap(
+    {l: x1 - hw1, r: x1 + hw1, u: y1 - hh1, d: y1 + hh1}, 
+    {l: x2 - hw2, r: x2 + hw2, u: y2 - hh2, d: y2 + hh2});
 }
 
 function checkScreenBounds(x, y, w, h, sw, sh)
 {
-  var hw = w / 2.0;
-  var hh = h / 2.0;
+  var hw = w * 0.5;
+  var hh = h * 0.5;
 
-  var left = x - hw;
-  var right = x + hw;
-  var up = y - hh;
-  var down = y + hh;
-
-  return calculateInverseMinOverlap({l: left, r: right, u: up, d: down},
-                              {l: 0, r: sw, u: 0, d: sh});
+  return calculateInverseMinOverlap(
+    {l: x - hw, r: x + hw, u: y - hh, d: y + hh},
+    {l: 0, r: sw, u: 0, d: sh});
 }
 
 function calculateInverseMinOverlap(box1, bounds)
@@ -208,42 +195,42 @@ function calculateInverseMinOverlap(box1, bounds)
 
   if(box1.l < bounds.l)
   {
-      var overlap = bounds.l-box1.l;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_LEFT;
-      }
-    }
-    if(box1.r > bounds.r)
+    var overlap = bounds.l-box1.l;
+    if(overlap < currentHit.overlap)
     {
-      var overlap = box1.r - bounds.r;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_RIGHT;
-      }
+      currentHit.overlap = overlap;
+      currentHit.dir = HIT_LEFT;
     }
-    if(box1.u < bounds.u)
+  }
+  if(box1.r > bounds.r)
+  {
+    var overlap = box1.r - bounds.r;
+    if(overlap < currentHit.overlap)
     {
-      var overlap = bounds.u-box1.u;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_UP;
-      }
+      currentHit.overlap = overlap;
+      currentHit.dir = HIT_RIGHT;
     }
-    if(box1.d > bounds.d)
+  }
+  if(box1.u < bounds.u)
+  {
+    var overlap = bounds.u-box1.u;
+    if(overlap < currentHit.overlap)
     {
-      var overlap = box1.d - bounds.d;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_DOWN;
-      }
+      currentHit.overlap = overlap;
+      currentHit.dir = HIT_UP;
     }
+  }
+  if(box1.d > bounds.d)
+  {
+    var overlap = box1.d - bounds.d;
+    if(overlap < currentHit.overlap)
+    {
+      currentHit.overlap = overlap;
+      currentHit.dir = HIT_DOWN;
+    }
+  }
 
-    return currentHit;
+  return currentHit;
 }
 
 function calculateMinOverlap(box1, box2)
@@ -302,14 +289,14 @@ function fillBackground(surface, width, height, color)
 function drawBox(surface, x, y, width, height, color)
 {
   surface.fillStyle = color;
-  surface.fillRect(Math.round(x - width/2.0), Math.round(y - height/2.0),
+  surface.fillRect(roundToInt(x - width*0.5), roundToInt(y - height*0.5),
                     width, height);
 }
 function drawCircle(surface, x, y, radius, color)
 {
   surface.beginPath();
   surface.fillStyle = color;
-  surface.arc(Math.round(x), Math.round(y), radius, 0, 2 * Math.PI);
+  surface.arc(roundToInt(x), roundToInt(y), radius, 0, 2 * Math.PI);
   surface.fill();
 }
 
@@ -324,39 +311,67 @@ function updateDeltaTime()
 
 var canvas = document.getElementById("GameCanvas");
 var context = canvas.getContext("2d");
-canvas.width = canvas.scrollWidth;
-canvas.height = canvas.scrollHeight;
+var gameSize = new Vector();
+canvas.addEventListener("onresize", function()
+{
+  prepareAndRun();
+});
 var kb = new Keyboard();
-function run()
+function update()
 {
   var dt = updateDeltaTime();
 
-  updateGame(dt, kb, canvas.width, canvas.height);
-  drawGame(context, canvas.width, canvas.height);
+  updateGame(dt, kb, gameSize.x, gameSize.y);
 
   kb.update();
 }
+function draw()
+{
+  drawGame(context, gameSize.x, gameSize.y);
+}
 
-setupGame(canvas.width, canvas.height);
+function prepareAndRun()
+{
+  gameSize.set(canvas.scrollWidth, canvas.scrollHeight);
+  canvas.width = gameSize.x;
+  canvas.height = gameSize.y;
+
+  setupGame(gameSize.x, gameSize.y);
+  setInterval(update, 1000 / gameFpsTarget);
+}
+
 
 (function() {
-  var onEachFrame;
-  if (window.requestAnimationFrame) {
-    onEachFrame = function(cb) {
-      var _cb = function() { cb(); window.requestAnimationFrame(_cb); }
-      _cb();
-    };
-  } else if (window.mozRequestAnimationFrame) {
-    onEachFrame = function(cb) {
-      var _cb = function() { cb(); window.mozRequestAnimationFrame(_cb); }
-      _cb();
-    };
-  } else {
-    onEachFrame = function(cb) {
-      setInterval(cb, 1000 / fpsTarget);
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    var vendorLen = vendors.length;
+    var x;
+    for(x = 0; x < vendorLen && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                                   || window[vendors[x]+'CancelRequestAnimationFrame'];
     }
-  }
-  
-  window.onEachFrame = onEachFrame;
-})();
-window.onEachFrame(run);
+ 
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+              timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+ 
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());
+
+window.requestAnimationFrame(prepareAndRun);
+function redraw()
+{
+  draw();
+  window.requestAnimationFrame(redraw);
+}
+window.requestAnimationFrame(redraw);
