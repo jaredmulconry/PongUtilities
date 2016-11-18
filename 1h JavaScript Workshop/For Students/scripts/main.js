@@ -192,10 +192,11 @@ function checkScreenBounds(x, y, w, h, sw, sh)
 function calculateInverseMinOverlap(box1, bounds)
 {
   var currentHit = { dir: HIT_NONE, overlap: Number.MAX_VALUE };
+  var overlap;
 
   if(box1.l < bounds.l)
   {
-    var overlap = bounds.l-box1.l;
+    overlap = bounds.l-box1.l;
     if(overlap < currentHit.overlap)
     {
       currentHit.overlap = overlap;
@@ -204,7 +205,7 @@ function calculateInverseMinOverlap(box1, bounds)
   }
   if(box1.r > bounds.r)
   {
-    var overlap = box1.r - bounds.r;
+    overlap = box1.r - bounds.r;
     if(overlap < currentHit.overlap)
     {
       currentHit.overlap = overlap;
@@ -213,7 +214,7 @@ function calculateInverseMinOverlap(box1, bounds)
   }
   if(box1.u < bounds.u)
   {
-    var overlap = bounds.u-box1.u;
+    overlap = bounds.u-box1.u;
     if(overlap < currentHit.overlap)
     {
       currentHit.overlap = overlap;
@@ -222,7 +223,7 @@ function calculateInverseMinOverlap(box1, bounds)
   }
   if(box1.d > bounds.d)
   {
-    var overlap = box1.d - bounds.d;
+    overlap = box1.d - bounds.d;
     if(overlap < currentHit.overlap)
     {
       currentHit.overlap = overlap;
