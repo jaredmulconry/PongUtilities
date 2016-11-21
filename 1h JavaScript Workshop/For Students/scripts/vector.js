@@ -14,7 +14,7 @@ var Vector = function()
     return;
   }
   
-  if(arguments.length == 2 && typeof arguments[0] == Number && typeof arguments[1] == Number)
+  if(arguments.length == 2 && typeof arguments[0] === "number" && typeof arguments[1] === "number")
   {
     this.x = arguments[0];
     this.y = arguments[1];
