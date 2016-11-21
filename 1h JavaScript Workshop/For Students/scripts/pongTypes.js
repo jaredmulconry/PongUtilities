@@ -12,11 +12,14 @@ var Paddle = function(pos, color, up, down)
 	this.direction = 0;
 	this.upControl = up;
 	this.downControl = down;
+  this.collider = new AABB(Paddle.size);
+  this.collider.setPosition(this.position);
 };
 
 Paddle.prototype.handleCollision = function(col)
 {
   this.position.set(col.position);
+  this.collider.setPosition(this.position);
 };
 
 Paddle.prototype.update = function(deltaTime, keyboard)
@@ -32,6 +35,8 @@ Paddle.prototype.update = function(deltaTime, keyboard)
   }
 
   this.position.y += this.direction * Paddle.speed * deltaTime;
+  this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
 
 Paddle.prototype.draw = function(surface)
@@ -51,7 +56,8 @@ var Ball = function(pos, color)
 {
 	this.position = pos;
 	this.color = color;
-	this.currentSpeed = this.startSpeed;
+	this.currentSpeed = Ball.startSpeed;
+  this.collider = new AABB(Ball.size);
 	this.direction = new Vector(Math.random(), Math.random()).subtract(new Vector(0.5, 0.5)).scale(2);
 	while(this.direction.equals(Vector.zero))
 	{
@@ -59,15 +65,21 @@ var Ball = function(pos, color)
 		this.direction.y = (Math.random() - 0.5) * 2;
 	}
 	this.direction.normalize();
+  this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
 
 Ball.startSpeed = 64;
-Ball.size = new Vector(16, 16);
-Ball.halfSize = Ball.size.scale(0.5);
+Ball.radius = 8;
+Ball.halfSize = new Vector(Ball.radius, Ball.radius);
+Ball.size = Ball.halfSize.scale(2);
+
 
 Ball.prototype.handleCollision = function(col)
 {
-  this.position = col.position;
+  this.position.set(col.position);
+  this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 
   if(col.direction.x != 0)
   {
@@ -82,14 +94,36 @@ Ball.prototype.handleCollision = function(col)
 Ball.prototype.update = function(deltaTime)
 {
   this.position.addTo(this.direction.scale(this.currentSpeed).scale(deltaTime));
+  this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
 
 Ball.prototype.draw = function(surface)
 {
   surface.fillStyle = this.color;
-  surface.fillRect(
-    roundToInt(this.position.x - Ball.halfSize.x), 
-    roundToInt(this.position.y - Ball.halfSize.y),
-    Ball.size.x,
-    Ball.size.y);
+  surface.beginPath();
+  surface.arc(
+    roundToInt(this.position.x), 
+    roundToInt(this.position.y),
+    Ball.radius,
+    0,
+    2 * Math.PI);
+  surface.fill();
+};
+
+var ScreenBounds = function(size)
+{
+  this.size = new Vector(size);
+  this.position = this.size.scale(0.5);
+  this.collider = new BoxConstraint(this.size);
+  this.collider.setPosition(this.position);
+};
+
+ScreenBounds.prototype.setSize = function(pos)
+{
+  this.size.set(pos);
+  this.position.set(this.size.scale(0.5));
+  this.collider.setPosition(this.position);
+  this.collider.setSize(this.size);
+  this.collider.updateBounds();
 };
