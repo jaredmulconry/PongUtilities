@@ -44,14 +44,10 @@ function drawGame(surface, width, height)
   ball.draw(surface);
 }
 
-
-
 ////////////////////////////////////////////////////
 //All of the stuff down here should already work
 //Do not Touch!
 ////////////////////////////////////////////////////
-
-
 
 function fillBackground(surface, width, height, color)
 {

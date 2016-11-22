@@ -33,7 +33,7 @@ AABB.prototype.updateBounds = function()
 
 var AABBIntersection = function(dir, overlap)
 {
-  this.direction = new Vector(dir);
+  this.direction = dir;
   this.overlap = overlap;
 };
 
@@ -133,44 +133,35 @@ function checkScreenBounds(x, y, w, h, sw, sh)
 
 function calculateInverseMinOverlap(box1, bounds)
 {
-  var currentHit = { dir: HIT_NONE, overlap: Number.MAX_VALUE };
-  var overlap;
+  var currentHit;
+  if(arguments[3] instanceof CollisionInfo)
+  {
+    currentHit = arguments[3];
+  }
+  else if(arguments[3] != undefined && typeof arguments[3] == "object")
+  {
+    currentHit = new CollisionInfo(arguments[3]);
+  }
+  else
+  {
+    currentHit = new CollisionInfo(null);
+  }
 
   if(box1.l < bounds.l)
   {
-    overlap = bounds.l-box1.l;
-    if(overlap < currentHit.overlap)
-    {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_LEFT;
-    }
+    currentHit.addIntersection(new AABBIntersection(HIT_LEFT, bounds.l-box1.l));
   }
   if(box1.r > bounds.r)
   {
-    overlap = box1.r - bounds.r;
-    if(overlap < currentHit.overlap)
-    {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_RIGHT;
-    }
+    currentHit.addIntersection(new AABBIntersection(HIT_RIGHT, box1.r - bounds.r));
   }
   if(box1.u < bounds.u)
   {
-    overlap = bounds.u-box1.u;
-    if(overlap < currentHit.overlap)
-    {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_UP;
-    }
+    currentHit.addIntersection(new AABBIntersection(HIT_UP, bounds.u-box1.u));
   }
   if(box1.d > bounds.d)
   {
-    overlap = box1.d - bounds.d;
-    if(overlap < currentHit.overlap)
-    {
-      currentHit.overlap = overlap;
-      currentHit.dir = HIT_DOWN;
-    }
+    currentHit.addIntersection(new AABBIntersection(HIT_DOWN, box1.d - bounds.d));
   }
 
   return currentHit;
@@ -178,46 +169,37 @@ function calculateInverseMinOverlap(box1, bounds)
 
 function calculateMinOverlap(box1, box2)
 {
-  var currentHit = { dir: HIT_NONE, overlap: Number.MAX_VALUE };
-
-  var leftIntersect = (box1.l - box2.r) < 0 && (box1.l - box2.l) > 0;
-  var rightIntersect = (box1.r - box2.l) > 0 && (box1.r - box2.r) < 0;
-  var topIntersect = (box1.u - box2.d) < 0 && (box1.u - box2.u) > 0;
-  var bottomIntersect = (box1.d - box2.u) > 0 && (box1.d - box2.d) < 0;
-
-  if((leftIntersect && (bottomIntersect || topIntersect)) || (rightIntersect && (bottomIntersect || topIntersect)))
+  var currentHit;
+  if(arguments[3] instanceof CollisionInfo)
   {
+    currentHit = arguments[3];
+  }
+  else if(arguments[3] != undefined && typeof arguments[3] == "object")
+  {
+    currentHit = new CollisionInfo(arguments[3]);
+  }
+  else
+  {
+    currentHit = new CollisionInfo(null);
+  }
+
+  if((((box1.l - box2.r) < 0 && (box1.l - box2.l) > 0) || ((box1.r - box2.l) > 0 && (box1.r - box2.r) < 0)) && (((box1.d - box2.u) > 0 && (box1.d - box2.d) < 0) || ((box1.u - box2.d) < 0 && (box1.u - box2.u) > 0)))
+  {
+    if(box2.r-box1.l > 0)
     {
-      var overlap = box2.r-box1.l;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_LEFT;
-      }
+      currentHit.addIntersection(new AABBIntersection(HIT_LEFT, box2.r-box1.l));
     }
+    if(box1.r - box2.l > 0)
     {
-      var overlap = box1.r - box2.l;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_RIGHT;
-      }
+      currentHit.addIntersection(new AABBIntersection(HIT_RIGHT, box1.r - box2.l));
     }
+    if(box2.d-box1.u > 0)
     {
-      var overlap = box2.d-box1.u;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_UP;
-      }
+      currentHit.addIntersection(new AABBIntersection(HIT_UP, box2.d-box1.u));
     }
+    if(box1.d - box2.u > 0)
     {
-      var overlap = box1.d - box2.u;
-      if(overlap < currentHit.overlap)
-      {
-        currentHit.overlap = overlap;
-        currentHit.dir = HIT_DOWN;
-      }
+      currentHit.addIntersection(new AABBIntersection(HIT_DOWN, box1.d - box2.u));
     }
   }
 
