@@ -31,6 +31,8 @@ AABB.prototype.updateBounds = function()
   this.bounds.d = this.position.y + this.halfSize.y;
 };
 
+var BoxConstraint = AABB;
+
 var AABBIntersection = function(dir, overlap)
 {
   this.direction = dir;
@@ -71,13 +73,11 @@ var ResolutionInfo = function(pos, dir, col)
   this.collision = col;
 };
 
-var BoxConstraint = AABB;
-
 function resolveCollision(position, collisionInfo)
 {
   var resolutionInfo = arguments[2] instanceof ResolutionInfo
     ? arguments[2]
-    : new ResolutionInfo(position, Vector.zero, collisionInfo);
+    : new ResolutionInfo();
 
   resolutionInfo.position.set(position);
   resolutionInfo.direction.set(Vector.zero);
@@ -108,43 +108,42 @@ function resolveCollision(position, collisionInfo)
   return resolutionInfo;
 }
 
-function checkCollision(x1, y1, w1, h1,
-                        x2, y2, w2, h2)
+function checkCollision(obj1, obj2)
 {
-  var hw1 = w1 * 0.5;
-  var hw2 = w2 * 0.5;
-  var hh1 = h1 * 0.5;
-  var hh2 = h2 * 0.5;
-
-  return calculateMinOverlap(
-    {l: x1 - hw1, r: x1 + hw1, u: y1 - hh1, d: y1 + hh1}, 
-    {l: x2 - hw2, r: x2 + hw2, u: y2 - hh2, d: y2 + hh2});
+  var collisionResults;
+  if(arguments[2] != undefined && arguments[2] instanceof CollisionInfo)
+  {
+    collisionResults = arguments[2];
+    collisionResults.intersections.splice(0, collisionResults.intersections.length);
+    collisionResults.other = obj2;
+  }
+  else
+  {
+    collisionResults = new CollisionInfo(obj2);
+  }
+  return calculateMinOverlap(obj1.bounds, obj2.bounds, collisionResults);
 }
 
-function checkScreenBounds(x, y, w, h, sw, sh)
+function checkScreenBounds(obj, bounds)
 {
-  var hw = w * 0.5;
-  var hh = h * 0.5;
-
-  return calculateInverseMinOverlap(
-    {l: x - hw, r: x + hw, u: y - hh, d: y + hh},
-    {l: 0, r: sw, u: 0, d: sh});
+  var collisionResults = new CollisionInfo(bounds);
+  return calculateInverseMinOverlap(obj.bounds, bounds.bounds, collisionResults);
 }
 
 function calculateInverseMinOverlap(box1, bounds)
 {
   var currentHit;
-  if(arguments[3] instanceof CollisionInfo)
+  if(arguments[2] instanceof CollisionInfo)
   {
-    currentHit = arguments[3];
+    currentHit = arguments[2];
   }
-  else if(arguments[3] != undefined && typeof arguments[3] == "object")
+  else if(arguments[2] != undefined && typeof arguments[2] == "object")
   {
-    currentHit = new CollisionInfo(arguments[3]);
+    currentHit = new CollisionInfo(arguments[2]);
   }
   else
   {
-    currentHit = new CollisionInfo(null);
+    currentHit = new CollisionInfo(undefined);
   }
 
   if(box1.l < bounds.l)

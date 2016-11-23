@@ -33,8 +33,8 @@ Vector.prototype.copy = function()
 };
 Vector.prototype.addTo = function(rhs)
 {
-  this.x += rhs.x;
-  this.y += rhs.y;
+  this.x = rhs.x + this.x;
+  this.y = rhs.y + this.y;
 };
 Vector.prototype.add = function(rhs)
 {
@@ -44,8 +44,8 @@ Vector.prototype.add = function(rhs)
 };
 Vector.prototype.subtractFrom = function(rhs)
 {
-  this.x -= rhs.x;
-  this.y -= rhs.y;
+  this.x = rhs.x - this.x;
+  this.y = rhs.y - this.y;
 };
 Vector.prototype.subtract = function(rhs)
 {
@@ -55,8 +55,8 @@ Vector.prototype.subtract = function(rhs)
 };
 Vector.prototype.scaleBy = function(s)
 {
-  this.x *= s;
-  this.y *= s;
+  this.x = s * this.x;
+  this.y = s * this.y;
 };
 Vector.prototype.scale = function(s)
 {
@@ -77,8 +77,8 @@ Vector.prototype.normalize = function()
   var len = this.length();
   if(len == 0.0) throw "This Vector has length 0. normalize won't work.";
 
-  this.x /= len;
-  this.y /= len;
+  this.x = this.x / len;
+  this.y = this.y / len;
 };
 Vector.prototype.normalized = function()
 {
