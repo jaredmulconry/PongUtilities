@@ -5,6 +5,7 @@ function roundToInt(v)
   return ~~(0.5 + v);
 }
 
+//
 var Paddle = function(pos, color, up, down)
 {
   this.position = pos;
@@ -14,14 +15,19 @@ var Paddle = function(pos, color, up, down)
 	this.downControl = down;
   this.collider = new AABB(Paddle.size);
   this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
-
+//
+Paddle.size = new Vector(16, 64);
+Paddle.halfSize = Paddle.size.scale(0.5);
+Paddle.speed = 128;
+//
 Paddle.prototype.handleCollision = function(col)
 {
   this.position.set(col.position);
   this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
-
 Paddle.prototype.update = function(deltaTime, keyboard)
 {
   this.direction = 0;
@@ -38,7 +44,6 @@ Paddle.prototype.update = function(deltaTime, keyboard)
   this.collider.setPosition(this.position);
   this.collider.updateBounds();
 };
-
 Paddle.prototype.draw = function(surface)
 {
   surface.fillStyle = this.color;
@@ -48,10 +53,7 @@ Paddle.prototype.draw = function(surface)
     Paddle.size.x, Paddle.size.y);
 };
 
-Paddle.size = new Vector(16, 64);
-Paddle.halfSize = Paddle.size.scale(0.5);
-Paddle.speed = 128;
-
+//
 var Ball = function(pos, color)
 {
 	this.position = pos;
@@ -68,13 +70,12 @@ var Ball = function(pos, color)
   this.collider.setPosition(this.position);
   this.collider.updateBounds();
 };
-
+//
 Ball.startSpeed = 64;
 Ball.radius = 8;
 Ball.halfSize = new Vector(Ball.radius, Ball.radius);
 Ball.size = Ball.halfSize.scale(2);
-
-
+//
 Ball.prototype.handleCollision = function(col)
 {
   this.position.set(col.position);
@@ -90,14 +91,12 @@ Ball.prototype.handleCollision = function(col)
     this.direction.y *= -1;
   }
 };
-
 Ball.prototype.update = function(deltaTime)
 {
   this.position.addTo(this.direction.scale(this.currentSpeed).scale(deltaTime));
   this.collider.setPosition(this.position);
   this.collider.updateBounds();
 };
-
 Ball.prototype.draw = function(surface)
 {
   surface.fillStyle = this.color;
@@ -111,14 +110,15 @@ Ball.prototype.draw = function(surface)
   surface.fill();
 };
 
+//
 var ScreenBounds = function(size)
 {
   this.size = new Vector(size);
   this.position = this.size.scale(0.5);
   this.collider = new BoxConstraint(this.size);
   this.collider.setPosition(this.position);
+  this.collider.updateBounds();
 };
-
 ScreenBounds.prototype.setSize = function(pos)
 {
   this.size.set(pos);

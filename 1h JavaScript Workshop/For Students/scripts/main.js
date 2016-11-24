@@ -10,7 +10,74 @@ var player1;
 var player2;
 var ball;
 var arenaWalls;
-var gameRestarting = false;
+
+function CollideBallWithWalls(width, height)
+{
+  var ballWallCollide = checkBounds(ball.collider, arenaWalls)
+  if(ballWallCollide.isColliding())
+  {
+    ball.handleCollision(resolveCollision(ball.position, ballWallCollide.getMinIntersection()));
+
+    var wallLose = ballWallCollide.intersections.find(
+          function(x)
+          {
+            return x.direction == HIT_LEFT || x.direction == HIT_RIGHT;
+          });
+    if(wallLose != undefined)
+    {
+      //A player has won
+      if(wallLose == HIT_RIGHT)
+      {
+        //Player 1 has won
+        setupGame(width, height);
+      }
+      else
+      {
+        //Player 2 has won
+        setupGame(width, height);
+      }
+
+      return true;
+    }
+  }
+  return false;
+}
+function CollideWithWalls(width, height)
+{
+  //Collide things with walls
+  var p1WallCollide = checkBounds(player1.collider, arenaWalls);
+  var p2WallCollide = checkBounds(player2.collider, arenaWalls);
+  if(CollideBallWithWalls(width, height))
+  {
+    return;
+  }
+
+  if(p1WallCollide.isColliding())
+  {
+    player1.handleCollision(resolveCollision(player1.position, p1WallCollide.getMinIntersection()));
+  }
+  if(p2WallCollide.isColliding())
+  {
+    player2.handleCollision(resolveCollision(player2.position, p2WallCollide.getMinIntersection()));
+  }
+}
+
+function CollideBallWithPaddles(width, height)
+{
+  //Collide the ball with paddles
+  var ballP1Collide = checkCollision(ball, player1);
+  var ballP2Collide = checkCollision(ball, player2);
+  if(ballP1Collide.isColliding())
+  {
+    ball.handleCollision(resolveCollision(ball.position, ballP1Collide.getMinIntersection()));
+    ball.direction.scaleBy(1.5);
+  }
+  if(ballP2Collide.isColliding())
+  {
+    ball.handleCollision(resolveCollision(ball.position, ballP2Collide.getMinIntersection()));
+    ball.direction.scaleBy(1.5);
+  }
+}
 
 function setupGame(width, height)
 {
@@ -20,24 +87,24 @@ function setupGame(width, height)
     "black",
     8);
     arenaWalls = new ScreenBounds(new Vector(width, height));
+
+    fillBackground(width, height, backgroundColor);
 }
 
 function updateGame(deltaTime, keyboard, width, height)
 {
-  //Player 1
+  //Move things
   player1.update(deltaTime, keyboard);
-  //
-
-  //Player 2
   player2.update(deltaTime, keyboard);
-  //
-
   ball.update(deltaTime);
+
+  CollideWithWalls(width, height);
+  CollideBallWithPaddles(width, height);
 }
 
 function drawGame(surface, width, height)
 {
-  fillBackground(surface, width, height, backgroundColor);
+  clearSurface(surface, width, height);
 
   player1.draw(surface);
   player2.draw(surface);
@@ -49,10 +116,17 @@ function drawGame(surface, width, height)
 //Do not Touch!
 ////////////////////////////////////////////////////
 
-function fillBackground(surface, width, height, color)
+function clearSurface(surface, width, height)
 {
-  surface.fillStyle = color;
-  surface.fillRect(0, 0, width, height);
+  surface.clearRect(0, 0, width, height);
+}
+
+function fillBackground(width, height, color)
+{
+  clearSurface(backgroundContext, width, height);
+  backgroundContext.clearRect(0, 0, width, height);
+  backgroundContext.fillStyle = color;
+  backgroundContext.fillRect(0, 0, width, height);
 }
 
 var previousFrameTime = Date.now();
@@ -64,10 +138,12 @@ function updateDeltaTime()
   return newDT * 0.001;
 }
 
-var canvas = document.getElementById("GameCanvas");
-var context = canvas.getContext("2d");
+var gameCanvas = document.getElementById("GameCanvas");
+var gameContext = gameCanvas.getContext("2d");
+var backgroundCanvas = document.getElementById("BackgroundCanvas");
+var backgroundContext = backgroundCanvas.getContext("2d");
 var gameSize = new Vector();
-canvas.addEventListener("onresize", function()
+gameCanvas.addEventListener("onresize", function()
 {
   prepare();
 });
@@ -82,25 +158,20 @@ function update()
   updateGame(dt, kb, gameSize.x, gameSize.y);
 
   kb.update();
-  if(gameRestarting)
-  {
-    gameRestarting = false;
-  }
-  else
-  {
-    updateRequest = window.requestAnimationFrame(update);
-  }
+  updateRequest = window.requestAnimationFrame(update);
 }
 function draw()
 {
-  drawGame(context, gameSize.x, gameSize.y);
+  drawGame(gameContext, gameSize.x, gameSize.y);
 }
 
 function prepare()
 {
-  gameSize.set(canvas.scrollWidth, canvas.scrollHeight);
-  canvas.width = gameSize.x;
-  canvas.height = gameSize.y;
+  gameSize.set(gameCanvas.scrollWidth, gameCanvas.scrollHeight);
+  gameCanvas.width = gameSize.x;
+  gameCanvas.height = gameSize.y;
+  backgroundCanvas.width = gameSize.x;
+  backgroundCanvas.height = gameSize.y;
 
   setupGame(gameSize.x, gameSize.y);
 }

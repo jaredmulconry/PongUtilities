@@ -73,6 +73,8 @@ var ResolutionInfo = function(pos, dir, col)
   this.collision = col;
 };
 
+//Converts a collision event into the information needed to
+//resolve it.
 function resolveCollision(position, collisionInfo)
 {
   var resolutionInfo = arguments[2] instanceof ResolutionInfo
@@ -83,7 +85,7 @@ function resolveCollision(position, collisionInfo)
   resolutionInfo.direction.set(Vector.zero);
   resolutionInfo.collision = collisionInfo;
 
-  switch(collisionInfo.dir)
+  switch(collisionInfo.direction)
   {
     case HIT_NONE:
       break;
@@ -108,29 +110,41 @@ function resolveCollision(position, collisionInfo)
   return resolutionInfo;
 }
 
+//Checks whether two objects have collided and provides information for each intersection.
+//NOTE: Currently only provides information to resolve obj1.
 function checkCollision(obj1, obj2)
 {
   var collisionResults;
   if(arguments[2] != undefined && arguments[2] instanceof CollisionInfo)
   {
     collisionResults = arguments[2];
-    collisionResults.intersections.splice(0, collisionResults.intersections.length);
     collisionResults.other = obj2;
   }
   else
   {
     collisionResults = new CollisionInfo(obj2);
   }
-  return calculateMinOverlap(obj1.bounds, obj2.bounds, collisionResults);
+  return calculateIntersections(obj1.collider.bounds, obj2.collider.bounds, collisionResults);
 }
 
-function checkScreenBounds(obj, bounds)
+//Checks whether an object has collided with a bounding region and provides information for each intersection.
+function checkBounds(collider, bounds)
 {
-  var collisionResults = new CollisionInfo(bounds);
-  return calculateInverseMinOverlap(obj.bounds, bounds.bounds, collisionResults);
+  var collisionResults;
+  if(arguments[2] != undefined && arguments[2] instanceof CollisionInfo)
+  {
+    collisionResults = arguments[2];
+    collisionResults.other = bounds;
+  }
+  else
+  {
+    collisionResults = new CollisionInfo(bounds);
+  }
+  return calculateInverseIntersections(collider.bounds, bounds.collider.bounds, collisionResults);
 }
 
-function calculateInverseMinOverlap(box1, bounds)
+//Calculates whether a collider has left the provided bounding region and provides information for each intersection.
+function calculateInverseIntersections(col, bounds)
 {
   var currentHit;
   if(arguments[2] instanceof CollisionInfo)
@@ -146,27 +160,28 @@ function calculateInverseMinOverlap(box1, bounds)
     currentHit = new CollisionInfo(undefined);
   }
 
-  if(box1.l < bounds.l)
+  if(col.l < bounds.l)
   {
-    currentHit.addIntersection(new AABBIntersection(HIT_LEFT, bounds.l-box1.l));
+    currentHit.addIntersection(new AABBIntersection(HIT_LEFT, bounds.l-col.l));
   }
-  if(box1.r > bounds.r)
+  if(col.r > bounds.r)
   {
-    currentHit.addIntersection(new AABBIntersection(HIT_RIGHT, box1.r - bounds.r));
+    currentHit.addIntersection(new AABBIntersection(HIT_RIGHT, col.r - bounds.r));
   }
-  if(box1.u < bounds.u)
+  if(col.u < bounds.u)
   {
-    currentHit.addIntersection(new AABBIntersection(HIT_UP, bounds.u-box1.u));
+    currentHit.addIntersection(new AABBIntersection(HIT_UP, bounds.u-col.u));
   }
-  if(box1.d > bounds.d)
+  if(col.d > bounds.d)
   {
-    currentHit.addIntersection(new AABBIntersection(HIT_DOWN, box1.d - bounds.d));
+    currentHit.addIntersection(new AABBIntersection(HIT_DOWN, col.d - bounds.d));
   }
 
   return currentHit;
 }
 
-function calculateMinOverlap(box1, box2)
+//Calculates whether two colliders have collided and provides information for each intersection.
+function calculateIntersections(box1, box2)
 {
   var currentHit;
   if(arguments[3] instanceof CollisionInfo)
@@ -182,21 +197,25 @@ function calculateMinOverlap(box1, box2)
     currentHit = new CollisionInfo(null);
   }
 
+  //This checks to see if a collision has occurred between two boxes
+  //if((leftIntersect || rightIntersect) && (topIntersect || bottomIntersect))
   if((((box1.l - box2.r) < 0 && (box1.l - box2.l) > 0) || ((box1.r - box2.l) > 0 && (box1.r - box2.r) < 0)) && (((box1.d - box2.u) > 0 && (box1.d - box2.d) < 0) || ((box1.u - box2.d) < 0 && (box1.u - box2.u) > 0)))
   {
-    if(box2.r-box1.l > 0)
+    //Each check below determines whether some of the intersection occurred
+    //on a given side of box1.
+    if(box2.r-box1.l > 0 && box2.r-box1.l <= box1.r-box1.l)
     {
       currentHit.addIntersection(new AABBIntersection(HIT_LEFT, box2.r-box1.l));
     }
-    if(box1.r - box2.l > 0)
+    if(box1.r-box2.l > 0 && box1.r-box2.l <= box1.r-box1.l)
     {
       currentHit.addIntersection(new AABBIntersection(HIT_RIGHT, box1.r - box2.l));
     }
-    if(box2.d-box1.u > 0)
+    if(box2.d-box1.u > 0 && box2.d-box1.u <= box1.d-box1.u)
     {
       currentHit.addIntersection(new AABBIntersection(HIT_UP, box2.d-box1.u));
     }
-    if(box1.d - box2.u > 0)
+    if(box1.d-box2.u > 0 && box1.d-box2.u <= box1.d-box1.u)
     {
       currentHit.addIntersection(new AABBIntersection(HIT_DOWN, box1.d - box2.u));
     }

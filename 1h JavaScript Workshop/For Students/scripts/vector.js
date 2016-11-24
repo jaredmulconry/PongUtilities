@@ -22,10 +22,18 @@ var Vector = function()
   }
 };
 
-Vector.prototype.set = function(x, y)
+Vector.prototype.set = function()
 {
-  this.x = x;
-  this.y = y;
+  if(arguments.length == 1 && arguments[0] instanceof Vector)
+  {
+    this.x = arguments[0].x;
+    this.y = arguments[0].y;
+  }
+  else if(arguments.length == 2 && typeof arguments[0] == "number" && typeof arguments[1] == "number")
+  {
+    this.x = arguments[0];
+    this.y = arguments[1];
+  }
 };
 Vector.prototype.copy = function()
 {
